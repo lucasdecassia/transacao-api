@@ -1,6 +1,7 @@
 package com.java.transacao_api.business.service;
 
 import com.java.transacao_api.business.services.TransacaoService;
+import com.java.transacao_api.business.services.validacao.Validacao;
 import com.java.transacao_api.controller.dtos.EstatisticasResponseDTO;
 import com.java.transacao_api.controller.dtos.TransacaoRequestDTO;
 import com.java.transacao_api.infrastrutures.exceptions.UnprocessableEntity;
@@ -23,6 +24,12 @@ class TransacaoServiceTest {
 @InjectMocks
 TransacaoService transacaoService;
 
+    Validacao validacaoValorNegativo;
+
+    Validacao validacaoDataFutura;
+
+    Validacao validacaoCampoPreenchido;
+
 TransacaoRequestDTO transacao;
 EstatisticasResponseDTO estatisticas;
 
@@ -30,13 +37,32 @@ EstatisticasResponseDTO estatisticas;
 void setUp(){
     transacao = new TransacaoRequestDTO(100.0, OffsetDateTime.now());
     estatisticas = new EstatisticasResponseDTO(1L, 100.0, 100.0, 100.0, 100.0);
+
+    validacaoValorNegativo = dto -> {
+        if(dto.valor() < 0){
+            throw new UnprocessableEntity("Campo Valor não pode ser negativo");
+        }
+    };
+
+    validacaoCampoPreenchido = dto -> {
+        if (dto.valor() == null || dto.dataHora() == null){
+            throw new UnprocessableEntity("Campos não preenchidos");
+        }
+    };
+
+    validacaoDataFutura = dto -> {
+        if (dto.dataHora().isAfter(OffsetDateTime.now())){
+            throw new UnprocessableEntity("Data e hora maiores que a data e hora atuais");
+        }
+    };
+
+    List<Validacao> validacoes = List.of(validacaoValorNegativo, validacaoDataFutura, validacaoCampoPreenchido);
+    transacaoService = new TransacaoService(validacoes);
 }
 
 @Test
-@DisplayName("Deve adicionar uma transação com sucesso")
 void deveAdicionarTransacaoComSucesso(){
     transacaoService.adicionarTransacoes(transacao);
-
     List<TransacaoRequestDTO> transacoes = transacaoService.buscarTransacoes(5000);
 
     assertEquals(1, transacoes.size());
@@ -45,11 +71,10 @@ void deveAdicionarTransacaoComSucesso(){
 
     @Test
     void deveLancarExcecaoCasoValorSejaNegativo(){
-
         UnprocessableEntity exception = assertThrows(UnprocessableEntity.class,
                 () -> transacaoService.adicionarTransacoes(new TransacaoRequestDTO(-10.0, OffsetDateTime.now())));
 
-        assertEquals("Valor não pode ser menor que 0", exception.getMessage());
+        assertEquals("Campo Valor não pode ser negativo", exception.getMessage());
     }
 
     @Test
@@ -62,7 +87,6 @@ void deveAdicionarTransacaoComSucesso(){
 
     @Test
     void deveLimparTransacaoComSucesso(){
-
         transacaoService.limparTransacoes();
 
         List<TransacaoRequestDTO> transacoes = transacaoService.buscarTransacoes(5000);
@@ -72,7 +96,6 @@ void deveAdicionarTransacaoComSucesso(){
 
     @Test
     void deveBuscarTransacaoDentroDoIntervalo(){
-
         TransacaoRequestDTO dto = new TransacaoRequestDTO(10.00, OffsetDateTime.now().minusHours(1));
 
         transacaoService.adicionarTransacoes(transacao);

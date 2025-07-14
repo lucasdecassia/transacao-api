@@ -1,5 +1,6 @@
 package com.java.transacao_api.business.services;
 
+import com.java.transacao_api.business.services.validacao.Validacao;
 import com.java.transacao_api.controller.dtos.TransacaoRequestDTO;
 import com.java.transacao_api.infrastrutures.exceptions.UnprocessableEntity;
 import lombok.RequiredArgsConstructor;
@@ -17,19 +18,12 @@ public class TransacaoService {
 
     private final List<TransacaoRequestDTO> listaTransacoes = new ArrayList<>();
 
+    private final List<Validacao> validacoes;
+
     public void adicionarTransacoes(TransacaoRequestDTO dto) {
+        log.info("Iniciado o processmento de gravar transações " + dto);
 
-        log.info("Iniciado o processmento de gravar transações" + dto);
-
-        if(dto.dataHora().isAfter(OffsetDateTime.now())){
-            log.error("Data e Hora maiores que a data e hora atual");
-            throw new UnprocessableEntity("Data e Hora maiores que a data e hora atuais");
-        }
-        if (dto.valor() < 0){
-            log.error("Valor não pode ser menor que 0");
-            throw new UnprocessableEntity("Valor não pode ser menor que 0");
-        }
-
+        validacoes.forEach(v -> v.validar(dto));
         listaTransacoes.add(dto);
         log.info("Transação gravada com sucesso");
     }
@@ -46,7 +40,7 @@ public class TransacaoService {
 
         log.info("Retorno de transações com sucesso");
         return listaTransacoes.stream()
-                .filter(trnsacao -> trnsacao.dataHora()
+                .filter(transacao -> transacao.dataHora()
                         .isAfter(dataHoraIntervalo)).toList();
     }
 
