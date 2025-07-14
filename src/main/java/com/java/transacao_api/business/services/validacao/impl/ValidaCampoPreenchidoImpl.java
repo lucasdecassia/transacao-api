@@ -17,4 +17,5 @@ public class ValidaCampoPreenchidoImpl implements Validacao {
         throw new UnprocessableEntity("Campos não preenchidos");
     }
   }
+
 }
