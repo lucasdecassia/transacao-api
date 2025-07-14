@@ -72,7 +72,7 @@ void deveAdicionarTransacaoComSucesso(){
     @Test
     void deveLancarExcecaoCasoValorSejaNegativo(){
         UnprocessableEntity exception = assertThrows(UnprocessableEntity.class,
-                () -> transacaoService.adicionarTransacoes(new TransacaoRequestDTO(-10.0, OffsetDateTime.now())));
+                () -> transacaoService.adicionarTransacoes(new TransacaoRequestDTO(-15.0, OffsetDateTime.now())));
 
         assertEquals("Campo Valor não pode ser negativo", exception.getMessage());
     }
